@@ -1,0 +1,87 @@
+import { useCallback, useMemo, useState } from "react";
+import { FiAlertCircle, FiCheckCircle, FiInfo, FiX } from "react-icons/fi";
+import { ToastContext } from "./toastContext";
+
+const icons = {
+  success: FiCheckCircle,
+  error: FiAlertCircle,
+  info: FiInfo,
+};
+
+const styles = {
+  success: "border-green-200 bg-green-50 text-green-800",
+  error: "border-red-200 bg-red-50 text-red-800",
+  info: "border-gray-200 bg-white text-gray-800",
+};
+
+export const ToastProvider = ({ children }) => {
+  const [toasts, setToasts] = useState([]);
+
+  const removeToast = useCallback((id) => {
+    setToasts((currentToasts) =>
+      currentToasts.filter((toast) => toast.id !== id)
+    );
+  }, []);
+
+  const showToast = useCallback(
+    ({ type = "info", message, duration = 4500 }) => {
+      const id = crypto.randomUUID();
+
+      setToasts((currentToasts) => [
+        ...currentToasts,
+        { id, type, message },
+      ]);
+
+      window.setTimeout(() => removeToast(id), duration);
+    },
+    [removeToast]
+  );
+
+  const value = useMemo(() => ({ showToast }), [showToast]);
+
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+      <div className="fixed right-4 top-20 z-[100] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-3">
+        {toasts.map((toast) => {
+          const Icon = icons[toast.type] || FiInfo;
+
+          return (
+            <div
+              key={toast.id}
+              className={`toast-enter flex items-start gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur ${styles[toast.type] || styles.info}`}
+            >
+              <Icon className="mt-0.5 text-xl shrink-0" />
+              <p className="flex-1 text-sm leading-5">{toast.message}</p>
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="rounded p-1 hover:bg-black/5"
+                aria-label="Close notification"
+              >
+                <FiX />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <style>
+        {`
+          @keyframes toast-slide-in {
+            from {
+              opacity: 0;
+              transform: translateX(24px) translateY(-8px) scale(0.98);
+            }
+            to {
+              opacity: 1;
+              transform: translateX(0) translateY(0) scale(1);
+            }
+          }
+
+          .toast-enter {
+            animation: toast-slide-in 220ms ease-out both;
+          }
+        `}
+      </style>
+    </ToastContext.Provider>
+  );
+};

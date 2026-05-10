@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+
+@theme{
+  --color-primary: #D4AF37;
+  --color-navbg: #FFF8F0;
+  --color-navtext: #735C00;
+  --color-herobg: #F5EDDF; 
+  --color-bestsallerbg: #FFF8F0; 
+  --color-border: #e5e7eb; 
+  --color-tertiary: #97B0FF;
+  --color-primary-dark: #6B5A1A;
+  --color-footer: #F5EDDF;
+  
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.refresh-spin {
+  animation: spin 0.6s linear infinite;
+}
