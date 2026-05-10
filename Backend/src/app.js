@@ -28,6 +28,10 @@ app.use("/api/v1", reviewRoutes);
 const frontendDistPath = path.join(__dirname, "../../frontend/dist");
 app.use(express.static(frontendDistPath));
 
-app.get("/*", (req, res) => {
-  res.sendFile(path.join(frontendDistPath, "index.html"));
+app.use((req, res, next) => {
+  if (!req.originalUrl.startsWith("/api")) {
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+  } else {
+    next();
+  }
 });
