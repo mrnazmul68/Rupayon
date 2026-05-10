@@ -1,4 +1,4 @@
-import img from "../assets/Images/working (1).jpeg";
+import img from "../assets/Images/working(1).jpeg";
 import { FaChessKing, FaChessQueen, FaChessPawn } from "react-icons/fa";
 
 const Worker = () => {
