@@ -23,7 +23,7 @@ const BestSeller = () => {
 
         {/* Horizontal Scroll */}
 
-        <div className="flex gap-6 overflow-x-auto pb-4 [scrollbar-width:none] [&::webkit-scrollbar]:hidden">
+        <div className="flex gap-6 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {bestSellers.map((product) => (
             <Link key={product.id} to={`/product/${product.id}`}>
               <div className="min-w-55 sm:min-w-6 rounded-2xl shrink-0">
