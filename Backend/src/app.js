@@ -9,6 +9,7 @@ import uploadRoutes from "./routes/upload.route.js";
 import reviewRoutes from "./routes/review.route.js";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,12 +27,19 @@ app.use("/api/v1", uploadRoutes);
 app.use("/api/v1", reviewRoutes);
 
 const frontendDistPath = path.join(__dirname, "../../frontend/dist");
-app.use(express.static(frontendDistPath));
 
-app.use((req, res, next) => {
-  if (!req.originalUrl.startsWith("/api")) {
-    res.sendFile(path.join(frontendDistPath, "index.html"));
-  } else {
-    next();
-  }
-});
+if (fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+
+  app.use((req, res, next) => {
+    if (!req.originalUrl.startsWith("/api")) {
+      res.sendFile(path.join(frontendDistPath, "index.html"));
+    } else {
+      next();
+    }
+  });
+} else {
+  app.get("/", (req, res) => {
+    res.send("Backend is running! Frontend not built yet.");
+  });
+}
