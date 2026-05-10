@@ -99,11 +99,8 @@ const Login = () => {
     try {
       setLoading(true);
       await googleLogin();
-      showToast({ type: "success", message: "Google login successful" });
-      navigate("/");
     } catch (err) {
       showToast({ type: "error", message: err.message });
-    } finally {
       setLoading(false);
     }
   };

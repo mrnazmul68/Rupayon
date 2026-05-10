@@ -7,6 +7,7 @@ import {
   registerUser,
   resendVerificationEmail,
   resetPassword,
+  getRedirectResultFromFirebase,
 } from "../firebase/authService";
 import { AuthContext } from "./authContext";
 import { usersApi } from "../services/api.js";
@@ -33,6 +34,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const firebaseUser = await getRedirectResultFromFirebase();
+        if (firebaseUser) {
+          await firebaseUser.reload();
+          const dbUserData = await syncUserToDatabase(firebaseUser);
+          setDbUser(dbUserData);
+          setUser(firebaseUser);
+        }
+      } catch (err) {
+        console.error("Redirect result error:", err);
+      }
+    };
+
+    handleRedirectResult();
+
     const unsubscribe = onAuthChange(async (firebaseUser) => {
       if (firebaseUser) {
         await firebaseUser.reload();
