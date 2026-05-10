@@ -6,7 +6,6 @@ import {
   sendEmailVerification,
   signInWithEmailAndPassword,
   signInWithRedirect,
-  getRedirectResult,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -85,11 +84,6 @@ export const logoutUser = () => signOut(auth);
 
 export const googleLogin = async () => {
   await signInWithRedirect(auth, googleProvider);
-};
-
-export const getRedirectResultFromFirebase = async () => {
-  const result = await getRedirectResult(auth);
-  return result?.user || null;
 };
 
 export const getCurrentUser = () => auth.currentUser;
