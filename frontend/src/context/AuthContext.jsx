@@ -36,12 +36,12 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const handleRedirectResult = async () => {
       try {
-        const firebaseUser = await getRedirectResultFromFirebase();
-        if (firebaseUser) {
-          await firebaseUser.reload();
-          const dbUserData = await syncUserToDatabase(firebaseUser);
+        const result = await getRedirectResultFromFirebase();
+        if (result?.user) {
+          await result.user.reload();
+          const dbUserData = await syncUserToDatabase(result.user);
           setDbUser(dbUserData);
-          setUser(firebaseUser);
+          setUser(result.user);
         }
       } catch (err) {
         console.error("Redirect result error:", err);
