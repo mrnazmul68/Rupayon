@@ -1,4 +1,4 @@
-const API_ROOT = import.meta.env.VITE_API_URL || "http://localhost:3000/api/v1";
+const API_ROOT = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 const request = async (path, options = {}) => {
   const response = await fetch(`${API_ROOT}${path}`, {

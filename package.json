@@ -1,0 +1,14 @@
+{
+  "name": "rupayon",
+  "version": "1.0.0",
+  "description": "Rupayon - Full-stack e-commerce application",
+  "scripts": {
+    "dev:backend": "cd Backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "cd Backend && npm start"
+  },
+  "keywords": ["e-commerce", "rupayon"],
+  "author": "",
+  "license": "ISC"
+}

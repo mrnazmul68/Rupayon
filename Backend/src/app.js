@@ -8,7 +8,11 @@ import siteSettingRoutes from "./routes/siteSetting.route.js";
 import uploadRoutes from "./routes/upload.route.js";
 import reviewRoutes from "./routes/review.route.js";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
@@ -21,6 +25,9 @@ app.use("/api/v1", siteSettingRoutes);
 app.use("/api/v1", uploadRoutes);
 app.use("/api/v1", reviewRoutes);
 
-app.get("/", (req, res) => {
-  res.send("Backend is working");
+const frontendDistPath = path.join(__dirname, "../../frontend/dist");
+app.use(express.static(frontendDistPath));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(frontendDistPath, "index.html"));
 });
