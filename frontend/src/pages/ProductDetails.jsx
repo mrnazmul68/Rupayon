@@ -50,7 +50,6 @@ const ProductDetails = () => {
   const [openAccordion, setOpenAccordion] = useState(0);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
-    title: "",
     comment: "",
   });
 
@@ -159,7 +158,6 @@ const ProductDetails = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       setReviewForm({
         rating: 5,
-        title: "",
         comment: "",
       });
     },
@@ -411,75 +409,8 @@ const ProductDetails = () => {
       {/* Reviews Section */}
       <section className="max-w-[1400px] mx-auto px-6 md:px-[60px] pb-20">
         <div className="border-t border-[#D6CCBA] pt-10">
-          <h2 className="font-['Cormorant_Garamond'] text-[2rem] leading-tight mb-8">
-            Reviews
-          </h2>
-          
-          {/* Review Form */}
-          {user && (
-            <form onSubmit={handleSubmitReview} className="mb-12 bg-white p-6 rounded-xl shadow-sm border border-[#D6CCBA]">
-              <h3 className="font-semibold mb-4 text-[#1C1C1C]">Write a Review</h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#7A7269] mb-2">
-                  Rating
-                </label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                      className="focus:outline-none"
-                    >
-                      <IoMdStar
-                        size={32}
-                        className={star <= reviewForm.rating ? "text-[#9A7B3A]" : "text-gray-300"}
-                      />
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#7A7269] mb-2">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={reviewForm.title}
-                  onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#D6CCBA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9A7B3A]"
-                  placeholder="Review title..."
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-[#7A7269] mb-2">
-                  Comment
-                </label>
-                <textarea
-                  value={reviewForm.comment}
-                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                  className="w-full px-4 py-2 border border-[#D6CCBA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9A7B3A]"
-                  rows={4}
-                  placeholder="Write your review..."
-                  required
-                />
-              </div>
-              
-              <button
-                type="submit"
-                disabled={createReviewMutation.isPending}
-                className="bg-[#9A7B3A] text-white px-6 py-3 rounded font-semibold text-[0.78rem] tracking-[0.22em] uppercase hover:bg-[#7D6230] transition-colors disabled:opacity-50"
-              >
-                {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
-              </button>
-            </form>
-          )}
-          
           {/* Review List */}
-          <div className="relative">
+          <div className="relative mb-10">
             {product?.reviews?.length > 0 ? (
               <>
                 <button
@@ -517,6 +448,54 @@ const ProductDetails = () => {
               </div>
             )}
           </div>
+          
+          {/* Review Form */}
+          {user && (
+            <form onSubmit={handleSubmitReview} className="bg-white p-6 rounded-xl shadow-sm border border-[#D6CCBA]">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#7A7269] mb-2">
+                  Rating
+                </label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                      className="focus:outline-none"
+                    >
+                      <IoMdStar
+                        size={32}
+                        className={star <= reviewForm.rating ? "text-[#9A7B3A]" : "text-gray-300"}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-[#7A7269] mb-2">
+                  Comment
+                </label>
+                <textarea
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                  className="w-full px-4 py-2 border border-[#D6CCBA] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9A7B3A]"
+                  rows={4}
+                  placeholder="Write your review..."
+                  required
+                />
+              </div>
+              
+              <button
+                type="submit"
+                disabled={createReviewMutation.isPending}
+                className="bg-[#9A7B3A] text-white px-6 py-3 rounded font-semibold text-[0.78rem] tracking-[0.22em] uppercase hover:bg-[#7D6230] transition-colors disabled:opacity-50"
+              >
+                {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+              </button>
+            </form>
+          )}
         </div>
       </section>
 
@@ -553,8 +532,6 @@ const ProductDetails = () => {
           </div>
         </section>
       )}
-
-      
     </div>
   );
 };

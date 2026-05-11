@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,9 +12,17 @@ const Login = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [showVerificationHelp, setShowVerificationHelp] = useState(false);
   const navigate = useNavigate();
-  const { loginUser, googleLogin, resendVerificationEmail, resetPassword } =
+  const { user, loginUser, googleLogin, resendVerificationEmail, resetPassword } =
     useAuth();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      setLoading(false);
+      showToast({ type: "success", message: "Login successful" });
+      navigate("/");
+    }
+  }, [user, navigate, showToast]);
 
   const handleLogin = async () => {
     try {

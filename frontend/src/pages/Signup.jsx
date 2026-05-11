@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaEnvelope, FaLock, FaUser } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,8 +12,16 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const navigate = useNavigate();
-  const { registerUser, googleLogin, resendVerificationEmail } = useAuth();
+  const { user, registerUser, googleLogin, resendVerificationEmail } = useAuth();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      setLoading(false);
+      showToast({ type: "success", message: "Login successful" });
+      navigate("/");
+    }
+  }, [user, navigate, showToast]);
 
   const handleSignup = async () => {
     try {
@@ -74,11 +82,8 @@ const Signup = () => {
     try {
       setLoading(true);
       await googleLogin();
-      showToast({ type: "success", message: "Google sign in successful" });
-      navigate("/");
-    } catch (error) {
-      showToast({ type: "error", message: error.message });
-    } finally {
+    } catch (err) {
+      showToast({ type: "error", message: err.message });
       setLoading(false);
     }
   };

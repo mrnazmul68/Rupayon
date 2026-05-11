@@ -5,7 +5,7 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification,
   signInWithEmailAndPassword,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -83,7 +83,7 @@ export const resetPassword = ({ email }) => {
 export const logoutUser = () => signOut(auth);
 
 export const googleLogin = async () => {
-  await signInWithRedirect(auth, googleProvider);
+  await signInWithPopup(auth, googleProvider);
 };
 
 export const getCurrentUser = () => auth.currentUser;
