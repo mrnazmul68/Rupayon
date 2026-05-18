@@ -1,6 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -45,6 +46,8 @@ export const logoutUser = () => signOut(auth);
 export const googleLogin = async () => {
   await signInWithRedirect(auth, googleProvider);
 };
+
+export const getRedirectResultFromAuth = () => getRedirectResult(auth);
 
 export const getCurrentUser = () => auth.currentUser;
 
