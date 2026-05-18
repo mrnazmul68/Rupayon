@@ -1,11 +1,12 @@
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
   sendPasswordResetEmail,
   sendEmailVerification,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
 } from "firebase/auth";
@@ -83,8 +84,10 @@ export const resetPassword = ({ email }) => {
 export const logoutUser = () => signOut(auth);
 
 export const googleLogin = async () => {
-  await signInWithPopup(auth, googleProvider);
+  await signInWithRedirect(auth, googleProvider);
 };
+
+export const getRedirectResultFromAuth = () => getRedirectResult(auth);
 
 export const getCurrentUser = () => auth.currentUser;
 
