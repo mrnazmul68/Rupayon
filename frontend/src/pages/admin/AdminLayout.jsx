@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   FaTachometerAlt,
@@ -15,12 +16,30 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import { useAuth } from "../../context/useAuth.js";
+import { ordersApi, usersApi } from "../../services/api.js";
 
 const AdminLayout = () => {
   const location = useLocation();
   const { user, logoutUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const { data: ordersData } = useQuery({
+    queryKey: ["orders", "admin-activity"],
+    queryFn: () => ordersApi.getAll(),
+    refetchInterval: 5000,
+  });
+
+  const { data: usersData } = useQuery({
+    queryKey: ["users", "admin-activity"],
+    queryFn: () => usersApi.getAll(),
+    refetchInterval: 5000,
+  });
+
+  const activityCounts = {
+    "/admin/orders": ordersData?.orders?.filter((order) => order.hasNewActivity).length || 0,
+    "/admin/users": usersData?.users?.filter((item) => item.hasNewActivity).length || 0,
+  };
 
   const menuItems = [
     { path: "/admin", icon: FaTachometerAlt, label: "Dashboard" },
@@ -66,8 +85,22 @@ const AdminLayout = () => {
                     } ${sidebarCollapsed ? 'justify-center' : ''}`}
                     title={sidebarCollapsed ? item.label : ''}
                   >
-                    <Icon size={sidebarCollapsed ? 24 : 16} />
-                    {!sidebarCollapsed && item.label}
+                    <span className="relative inline-flex">
+                      <Icon size={sidebarCollapsed ? 24 : 16} />
+                      {activityCounts[item.path] > 0 && sidebarCollapsed && (
+                        <span className="absolute -right-2 -top-2 h-3 w-3 rounded-full bg-red-500 ring-2 ring-gray-900" />
+                      )}
+                    </span>
+                    {!sidebarCollapsed && (
+                      <span className="flex flex-1 items-center justify-between gap-2">
+                        {item.label}
+                        {activityCounts[item.path] > 0 && (
+                          <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                            {activityCounts[item.path]}
+                          </span>
+                        )}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
@@ -122,7 +155,14 @@ const AdminLayout = () => {
                     }`}
                   >
                     <Icon />
-                    {item.label}
+                    <span className="flex flex-1 items-center justify-between gap-2">
+                      {item.label}
+                      {activityCounts[item.path] > 0 && (
+                        <span className="min-w-5 rounded-full bg-red-500 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                          {activityCounts[item.path]}
+                        </span>
+                      )}
+                    </span>
                   </Link>
                 </li>
               );

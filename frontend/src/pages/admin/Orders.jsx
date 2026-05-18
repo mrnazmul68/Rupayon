@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ordersApi } from "../../services/api.js";
-import { FaSearch, FaEye, FaEdit, FaSyncAlt } from "react-icons/fa";
+import { FaSearch, FaEye, FaEdit, FaSyncAlt, FaTrash } from "react-icons/fa";
 import { OrdersTableSkeleton } from "../../components/Skeletons.jsx";
+import { useToast } from "../../context/useToast.js";
 
 const Orders = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -11,6 +12,8 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activityCleared, setActivityCleared] = useState(false);
+  const [selectedOrderIds, setSelectedOrderIds] = useState([]);
   const [editFormData, setEditFormData] = useState({
     status: "",
     paymentStatus: "",
@@ -18,6 +21,7 @@ const Orders = () => {
   });
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: ordersData, isLoading, refetch: refetchOrders } = useQuery({
     queryKey: ["orders"],
@@ -36,10 +40,57 @@ const Orders = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       setIsEditModalOpen(false);
+      showToast({ type: "success", message: "Order updated successfully" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to update order" });
+    },
+  });
+
+  const deleteSingleMutation = useMutation({
+    mutationFn: ordersApi.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      showToast({ type: "success", message: "Order deleted successfully" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to delete order" });
+    },
+  });
+
+  const deleteBulkMutation = useMutation({
+    mutationFn: ordersApi.deleteBulk,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      setSelectedOrderIds([]);
+      showToast({ type: "success", message: data.message || "Orders deleted successfully" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to delete orders" });
+    },
+  });
+
+  const markActivitySeenMutation = useMutation({
+    mutationFn: ordersApi.markActivitySeen,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
 
   const orders = ordersData?.orders || [];
+  const newActivityCount = orders.filter((order) => order.hasNewActivity).length;
+  const filteredOrders = orders.filter((order) =>
+    order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (!isLoading && newActivityCount > 0 && !activityCleared) {
+      setActivityCleared(true);
+      markActivitySeenMutation.mutate();
+    }
+  }, [activityCleared, isLoading, markActivitySeenMutation, newActivityCount]);
 
   const handleView = (order) => {
     setSelectedOrder(order);
@@ -61,11 +112,34 @@ const Orders = () => {
     updateMutation.mutate({ id: selectedOrder._id, data: editFormData });
   };
 
-  const filteredOrders = orders.filter((order) =>
-    order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDeleteSingle = (id) => {
+    if (window.confirm("Are you sure you want to delete this order?")) {
+      deleteSingleMutation.mutate(id);
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedOrderIds.length === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedOrderIds.length} order(s)?`)) {
+      deleteBulkMutation.mutate(selectedOrderIds);
+    }
+  };
+
+  const toggleSelectOrder = (orderId) => {
+    setSelectedOrderIds(prev => 
+      prev.includes(orderId) 
+        ? prev.filter(id => id !== orderId) 
+        : [...prev, orderId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedOrderIds.length === filteredOrders.length) {
+      setSelectedOrderIds([]);
+    } else {
+      setSelectedOrderIds(filteredOrders.map(order => order._id));
+    }
+  };
 
   const getStatusBadgeClass = (status) => {
     const classes = {
@@ -115,14 +189,26 @@ const Orders = () => {
             <option value="cancelled">Cancelled</option>
           </select>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
-        >
-          <FaSyncAlt className={isRefreshing ? "refresh-spin" : ""} />
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          {selectedOrderIds.length > 0 && (
+            <button
+              onClick={handleDeleteSelected}
+              disabled={deleteBulkMutation.isPending}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              <FaTrash />
+              Delete Selected ({selectedOrderIds.length})
+            </button>
+          )}
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+          >
+            <FaSyncAlt className={isRefreshing ? "refresh-spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {isLoading || isRefreshing ? (
@@ -134,6 +220,14 @@ const Orders = () => {
             <table className="w-full min-w-[900px]">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <input
+                      type="checkbox"
+                      checked={filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length}
+                      onChange={toggleSelectAll}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Order
                   </th>
@@ -161,7 +255,25 @@ const Orders = () => {
                 {filteredOrders.map((order) => (
                   <tr key={order._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{order.orderNumber}</div>
+                      <input
+                        type="checkbox"
+                        checked={selectedOrderIds.includes(order._id)}
+                        onChange={() => toggleSelectOrder(order._id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{order.orderNumber}</span>
+                        {order.hasNewActivity && (
+                          <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                            New
+                          </span>
+                        )}
+                      </div>
+                      {order.activityMessage && order.hasNewActivity && (
+                        <p className="mt-1 text-xs text-red-600">{order.activityMessage}</p>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">{order.customerName}</div>
@@ -205,6 +317,12 @@ const Orders = () => {
                         >
                           <FaEdit />
                         </button>
+                        <button
+                          onClick={() => handleDeleteSingle(order._id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <FaTrash />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -227,51 +345,73 @@ const Orders = () => {
             ) : (
               filteredOrders.map((order) => (
                 <div key={order._id} className="bg-white rounded-xl shadow-sm p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-900">{order.orderNumber}</h3>
-                      <p className="text-xs text-gray-500 mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedOrderIds.includes(order._id)}
+                      onChange={() => toggleSelectOrder(order._id)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">{order.orderNumber}</h3>
+                          {order.hasNewActivity && (
+                            <span className="mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                              {order.activityMessage || "New activity"}
+                            </span>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">{new Date(order.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-none font-semibold rounded-full ${getStatusBadgeClass(
+                              order.status
+                            )}`}
+                          >
+                            {order.status}
+                          </span>
+                          <span
+                            className={`px-2 py-1 inline-flex text-xs leading-none font-semibold rounded-full ${getPaymentStatusBadgeClass(
+                              order.paymentStatus
+                            )}`}
+                          >
+                            {order.paymentStatus}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-3">
+                        <p className="text-sm text-gray-900">{order.customerName}</p>
+                        <p className="text-xs text-gray-500">{order.customerEmail}</p>
+                      </div>
+
+                      <p className="text-lg font-semibold text-gray-900 mt-3">৳{order.total}</p>
+
+                      <div className="flex gap-2 pt-3 border-t border-gray-100">
+                        <button
+                          onClick={() => handleView(order)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+                        >
+                          <FaEye size={14} />
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleEdit(order)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"
+                        >
+                          <FaEdit size={14} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSingle(order._id)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
+                        >
+                          <FaTrash size={14} />
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-none font-semibold rounded-full ${getStatusBadgeClass(
-                          order.status
-                        )}`}
-                      >
-                        {order.status}
-                      </span>
-                      <span
-                        className={`px-2 py-1 inline-flex text-xs leading-none font-semibold rounded-full ${getPaymentStatusBadgeClass(
-                          order.paymentStatus
-                        )}`}
-                      >
-                        {order.paymentStatus}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-gray-900">{order.customerName}</p>
-                    <p className="text-xs text-gray-500">{order.customerEmail}</p>
-                  </div>
-
-                  <p className="text-lg font-semibold text-gray-900">৳{order.total}</p>
-
-                  <div className="flex gap-2 pt-2 border-t border-gray-100">
-                    <button
-                      onClick={() => handleView(order)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
-                    >
-                      <FaEye size={14} />
-                      View
-                    </button>
-                    <button
-                      onClick={() => handleEdit(order)}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"
-                    >
-                      <FaEdit size={14} />
-                      Edit
-                    </button>
                   </div>
                 </div>
               ))

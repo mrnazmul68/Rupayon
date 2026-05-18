@@ -10,15 +10,17 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-  const [showVerificationHelp, setShowVerificationHelp] = useState(false);
   const navigate = useNavigate();
-  const { user, loginUser, googleLogin, resendVerificationEmail, resetPassword } =
-    useAuth();
+  const {
+    user,
+    loginUser,
+    googleLogin,
+    resetPassword,
+  } = useAuth();
   const { showToast } = useToast();
 
   useEffect(() => {
     if (user) {
-      setLoading(false);
       showToast({ type: "success", message: "Login successful" });
       navigate("/");
     }
@@ -36,43 +38,8 @@ const Login = () => {
 
       setLoading(true);
       await loginUser({ email, password });
-      setShowVerificationHelp(false);
       showToast({ type: "success", message: "Login successful" });
       navigate("/");
-    } catch (error) {
-      if (error.message.toLowerCase().includes("verify")) {
-        setShowVerificationHelp(true);
-      }
-
-      showToast({ type: "error", message: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    try {
-      if (!email || !password) {
-        showToast({
-          type: "error",
-          message: "Enter your email and password first, then resend.",
-        });
-        return;
-      }
-
-      setLoading(true);
-      const result = await resendVerificationEmail({ email, password });
-
-      if (result.alreadyVerified) {
-        setShowVerificationHelp(false);
-      }
-
-      showToast({
-        type: result.alreadyVerified ? "success" : "info",
-        message: result.alreadyVerified
-          ? "Your email is already verified. You can login now."
-          : "Verification email sent again. Check your inbox or spam folder.",
-      });
     } catch (error) {
       showToast({ type: "error", message: error.message });
     } finally {
@@ -94,7 +61,7 @@ const Login = () => {
       await resetPassword({ email });
       showToast({
         type: "success",
-        message: "Password reset email sent. Check your inbox or spam folder.",
+        message: "Password reset link sent. Check your inbox or spam folder.",
       });
     } catch (error) {
       showToast({ type: "error", message: error.message });
@@ -123,23 +90,6 @@ const Login = () => {
         <p className="text-sm text-gray-500 text-center mb-8">
           Login to continue shopping at Rupayon
         </p>
-
-        {showVerificationHelp && (
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            <p className="font-semibold">Email verification required</p>
-            <p className="mt-1">
-              Open the verification email from Firebase and click the link.
-              Then come back and login again.
-            </p>
-            <button
-              onClick={handleResendVerification}
-              disabled={loading}
-              className="mt-3 w-full rounded border border-amber-700 px-3 py-2 font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
-            >
-              Resend Verification Email
-            </button>
-          </div>
-        )}
 
         <div className="mb-4 relative">
           <FaEnvelope className="absolute top-3 left-3 text-gray-400" />

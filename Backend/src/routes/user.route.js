@@ -6,11 +6,13 @@ import {
   updateUser,
   deleteUser,
   syncUser,
+  markUsersActivitySeen,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
 router.post("/users/sync", syncUser);
+router.put("/users/activity/seen", markUsersActivitySeen);
 router.get("/users", getUsers);
 router.get("/users/:id", getSingleUser);
 router.post("/users", createUser);

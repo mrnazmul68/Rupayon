@@ -37,10 +37,12 @@ const userSchema = new mongoose.Schema(
       postalCode: String,
       country: String,
     },
-    verificationCode: String,
-    verificationCodeExpires: Date,
-    resetCode: String,
-    resetCodeExpires: Date,
+    hasNewActivity: {
+      type: Boolean,
+      default: false,
+    },
+    activityMessage: String,
+    activitySeenAt: Date,
   },
   { timestamps: true, versionKey: false }
 );

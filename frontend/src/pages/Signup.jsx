@@ -10,14 +10,12 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
   const navigate = useNavigate();
-  const { user, registerUser, googleLogin, resendVerificationEmail } = useAuth();
+  const { user, registerUser, googleLogin } = useAuth();
   const { showToast } = useToast();
 
   useEffect(() => {
     if (user) {
-      setLoading(false);
       showToast({ type: "success", message: "Login successful" });
       navigate("/");
     }
@@ -39,38 +37,18 @@ const Signup = () => {
       }
 
       setLoading(true);
-      await registerUser({ name, email, password });
-      setVerificationSent(true);
+      const cleanEmail = email.trim().toLowerCase();
+      const pendingSignupNames = JSON.parse(
+        localStorage.getItem("rupayonSignupNames") || "{}"
+      );
+      pendingSignupNames[cleanEmail] = name.trim();
+      localStorage.setItem("rupayonSignupNames", JSON.stringify(pendingSignupNames));
+      await registerUser({ email, password });
       showToast({
         type: "success",
-        message: "Verification email sent. Check your inbox before logging in.",
+        message: "Account created successfully",
       });
-    } catch (error) {
-      showToast({ type: "error", message: error.message });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    try {
-      if (!email || !password) {
-        showToast({
-          type: "error",
-          message: "Keep your email and password filled to resend verification.",
-        });
-        return;
-      }
-
-      setLoading(true);
-      const result = await resendVerificationEmail({ email, password });
-
-      showToast({
-        type: result.alreadyVerified ? "success" : "info",
-        message: result.alreadyVerified
-          ? "Your email is already verified. You can login now."
-          : "Verification email sent again. Please check your inbox or spam folder.",
-      });
+      navigate("/");
     } catch (error) {
       showToast({ type: "error", message: error.message });
     } finally {
@@ -96,36 +74,8 @@ const Signup = () => {
         </h2>
 
         <p className="text-sm text-gray-500 text-center mb-8">
-          {verificationSent
-            ? "Open the email from Firebase and click the verification link"
-            : "Join Rupayon for exclusive borka collections"}
+          Join Rupayon for exclusive borka collections
         </p>
-
-        {verificationSent && (
-          <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
-            <p className="font-semibold">Verification email sent to:</p>
-            <p className="mt-1 break-all">{email}</p>
-            <p className="mt-3 text-green-700">
-              After clicking the link in your email, return here and login with
-              the same email and password.
-            </p>
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-              <button
-                onClick={handleResendVerification}
-                disabled={loading}
-                className="flex-1 rounded border border-green-700 px-3 py-2 font-medium text-green-800 hover:bg-green-100 disabled:opacity-50"
-              >
-                Resend Email
-              </button>
-              <button
-                onClick={() => navigate("/login")}
-                className="flex-1 rounded bg-black px-3 py-2 font-medium text-white hover:bg-gray-800"
-              >
-                Go to Login
-              </button>
-            </div>
-          </div>
-        )}
 
         <div className="mb-4 relative">
           <FaUser className="absolute top-3 left-3 text-gray-400" />

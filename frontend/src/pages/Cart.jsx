@@ -44,7 +44,7 @@ const Cart = () => {
     <div className="bg-white pt-24 min-h-screen py-12 px-4 md:px-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-serif font-bold text-gray-900 mb-10 flex items-center gap-3">
-          Your Shopping Bag{" "}
+          Your Shopping Bag
           <span className="text-lg font-sans font-normal text-gray-400">
             ({itemCount} items)
           </span>

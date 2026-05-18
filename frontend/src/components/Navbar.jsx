@@ -14,8 +14,10 @@ const Navbar = () => {
   const { user, dbUser, logoutUser } = useAuth();
   const dropdownRef = useRef(null);
 
+  const profileName = dbUser?.name || user?.displayName || user?.email || "Profile";
+  const profileImage = dbUser?.avatar || user?.photoURL;
   const profileInitial =
-    user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U";
+    profileName?.charAt(0) || user?.email?.charAt(0) || "U";
   const isAdmin = dbUser?.role === "admin";
   const closeMenu = () => setOpen(false);
 
@@ -78,12 +80,12 @@ const Navbar = () => {
               <button
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 className="h-9 w-9 rounded-full overflow-hidden border border-navtext flex items-center justify-center bg-white text-sm font-semibold uppercase hover:opacity-80 transition"
-                title={user.displayName || user.email || "Profile"}
+                title={profileName}
               >
-                {user.photoURL ? (
+                {profileImage ? (
                   <img
-                    src={user.photoURL}
-                    alt={user.displayName || "Profile"}
+                    src={profileImage}
+                    alt={profileName}
                     className="h-full w-full object-cover"
                     referrerPolicy="no-referrer"
                   />

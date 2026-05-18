@@ -44,6 +44,8 @@ export const ordersApi = {
   create: (data) => request("/orders", { method: "POST", body: JSON.stringify(data) }),
   update: (id, data) => request(`/orders/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id) => request(`/orders/${id}`, { method: "DELETE" }),
+  deleteBulk: (ids) => request("/orders/bulk-delete", { method: "POST", body: JSON.stringify({ ids }) }),
+  markActivitySeen: () => request("/orders/activity/seen", { method: "PUT" }),
   getStats: () => request("/dashboard/stats"),
 };
 
@@ -57,6 +59,7 @@ export const usersApi = {
   update: (id, data) => request(`/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   delete: (id) => request(`/users/${id}`, { method: "DELETE" }),
   sync: (data) => request("/users/sync", { method: "POST", body: JSON.stringify(data) }),
+  markActivitySeen: () => request("/users/activity/seen", { method: "PUT" }),
 };
 
 export const settingsApi = {

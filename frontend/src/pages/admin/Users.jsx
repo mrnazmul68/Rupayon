@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usersApi } from "../../services/api.js";
 import { FaSearch, FaEdit, FaTrash, FaUser, FaSyncAlt } from "react-icons/fa";
 import { UsersPageSkeleton } from "../../components/Skeletons.jsx";
 import { VirtualList } from "../../components/VirtualList.jsx";
+import { useToast } from "../../context/useToast.js";
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -11,6 +12,7 @@ const Users = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activityCleared, setActivityCleared] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,6 +22,7 @@ const Users = () => {
   });
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: usersData, isLoading, refetch: refetchUsers } = useQuery({
     queryKey: ["users", roleFilter],
@@ -37,6 +40,10 @@ const Users = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       setIsModalOpen(false);
+      showToast({ type: "success", message: "User updated successfully!" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to update user" });
     },
   });
 
@@ -44,10 +51,29 @@ const Users = () => {
     mutationFn: usersApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      showToast({ type: "success", message: "User deleted successfully!" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to delete user" });
+    },
+  });
+
+  const markActivitySeenMutation = useMutation({
+    mutationFn: usersApi.markActivitySeen,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 
   const users = usersData?.users || [];
+  const newActivityCount = users.filter((user) => user.hasNewActivity).length;
+
+  useEffect(() => {
+    if (!isLoading && newActivityCount > 0 && !activityCleared) {
+      setActivityCleared(true);
+      markActivitySeenMutation.mutate();
+    }
+  }, [activityCleared, isLoading, markActivitySeenMutation, newActivityCount]);
 
   const handleEdit = (user) => {
     setEditingUser(user);
@@ -225,6 +251,16 @@ const Users = () => {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          {user.hasNewActivity && (
+                            <div className="mt-1 flex items-center gap-2">
+                              <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                                New
+                              </span>
+                              {user.activityMessage && (
+                                <span className="text-xs text-red-600">{user.activityMessage}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="text-sm text-gray-500">
@@ -303,6 +339,11 @@ const Users = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-sm font-medium text-gray-900">{user.name}</h3>
+                      {user.hasNewActivity && (
+                        <span className="mt-1 inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                          {user.activityMessage || "New activity"}
+                        </span>
+                      )}
                       <p className="text-xs text-gray-500 mt-1">{user.email}</p>
                       {user.phone && (
                         <p className="text-xs text-gray-500">{user.phone}</p>

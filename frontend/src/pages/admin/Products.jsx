@@ -4,6 +4,7 @@ import { productsApi, categoriesApi, uploadApi } from "../../services/api.js";
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaBox, FaUpload, FaTimes, FaSyncAlt } from "react-icons/fa";
 import { ProductsTableSkeleton } from "../../components/Skeletons.jsx";
 import { VirtualList } from "../../components/VirtualList.jsx";
+import { useToast } from "../../context/useToast.js";
 
 const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
@@ -44,6 +45,7 @@ const Products = () => {
   });
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: productsData, isLoading: productsLoading, refetch: refetchProducts } = useQuery({
     queryKey: ["products"],
@@ -138,18 +140,11 @@ const Products = () => {
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      console.log("=== Creating Product ===");
-      console.log("Form data:", data);
-      console.log("Selected files:", selectedFiles);
-      
       let uploadedImages = [];
       if (selectedFiles.length > 0) {
         setUploading(true);
-        console.log("Uploading images to Cloudinary...");
         const base64Images = await Promise.all(selectedFiles.map(fileToBase64));
-        console.log("Base64 images count:", base64Images.length);
         const uploadResult = await uploadApi.images(base64Images);
-        console.log("Upload result:", uploadResult);
         uploadedImages = uploadResult.images;
         setUploading(false);
       }
@@ -160,17 +155,16 @@ const Products = () => {
         image: data.image || uploadedImages[0]?.url || "",
       };
       
-      console.log("Final product data:", productData);
       return productsApi.create(productData);
     },
     onSuccess: () => {
-      console.log("Product created successfully!");
       queryClient.invalidateQueries({ queryKey: ["products"] });
       setIsModalOpen(false);
       resetForm();
+      showToast({ type: "success", message: "Product created successfully!" });
     },
     onError: (error) => {
-      console.error("Error creating product:", error);
+      showToast({ type: "error", message: error.message || "Failed to create product" });
     },
   });
 
@@ -197,6 +191,10 @@ const Products = () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       setIsModalOpen(false);
       resetForm();
+      showToast({ type: "success", message: "Product updated successfully!" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to update product" });
     },
   });
 
@@ -204,6 +202,10 @@ const Products = () => {
     mutationFn: productsApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      showToast({ type: "success", message: "Product deleted successfully!" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to delete product" });
     },
   });
 

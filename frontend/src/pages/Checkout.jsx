@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MdLock,
   MdLocalShipping,
@@ -16,10 +16,11 @@ import { ordersApi } from "../services/api.js";
 
 const Checkout = () => {
   const { cartItems, subtotal, shipping, total, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, dbUser, refreshDbUser } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -29,14 +30,37 @@ const Checkout = () => {
     phone: "",
   });
 
+  useEffect(() => {
+    const savedName = dbUser?.name || user?.displayName || "";
+    const [firstName = "", ...lastNameParts] = savedName.split(" ");
+
+    setFormData({
+      firstName,
+      lastName: lastNameParts.join(" "),
+      address: dbUser?.address?.street || "",
+      city: dbUser?.address?.city || "",
+      postalCode: dbUser?.address?.postalCode || "",
+      phone: dbUser?.phone || user?.phoneNumber || "",
+    });
+  }, [dbUser, user]);
+
   const handlePlaceOrder = async () => {
     try {
       if (!user) return;
+      const requiredFields = ["firstName", "address", "city", "postalCode", "phone"];
+      const hasMissingDetails = requiredFields.some((field) => !formData[field].trim());
+
+      if (hasMissingDetails) {
+        setError("Please complete your shipping details before placing the order.");
+        return;
+      }
+
       setLoading(true);
+      setError("");
       
       const orderData = {
-        userId: user.uid || user.id,
-        customerName: `${formData.firstName} ${formData.lastName}`,
+        userId: dbUser?._id || user.uid || user.id,
+        customerName: `${formData.firstName} ${formData.lastName}`.trim(),
         customerEmail: user.email,
         customerPhone: formData.phone,
         shippingAddress: {
@@ -65,10 +89,12 @@ const Checkout = () => {
       };
 
       await ordersApi.create(orderData);
+      await refreshDbUser?.();
       setOrderPlaced(true);
       clearCart();
     } catch (error) {
       console.error("Error placing order:", error);
+      setError(error.message || "Could not place the order. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -119,6 +145,11 @@ const Checkout = () => {
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
               <h2 className="text-xl font-bold mb-6">Shipping details</h2>
+              {dbUser?.phone || dbUser?.address?.street ? (
+                <p className="text-sm text-green-700 bg-green-50 border border-green-100 rounded-lg px-4 py-3 mb-4">
+                  We filled this from your saved profile. Update anything here and it will be saved for next time.
+                </p>
+              ) : null}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">First name</label>
@@ -132,10 +163,9 @@ const Checkout = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last name (optional)</label>
                   <input
                     type="text"
-                    required
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:border-black"
@@ -324,6 +354,9 @@ const Checkout = () => {
               >
                 <MdLock /> {loading ? "Placing Order..." : "Place Order"}
               </button>
+              {error && (
+                <p className="text-sm text-red-600 text-center mt-3">{error}</p>
+              )}
               <p className="text-xs text-center text-gray-500 mt-4 flex items-center justify-center gap-1">
                 <MdInfoOutline /> Your payment information is secure
               </p>

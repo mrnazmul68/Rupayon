@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { settingsApi, uploadApi } from "../../services/api.js";
 import { FaUpload, FaImage, FaGlobe, FaUserTie, FaTruck, FaDollarSign, FaCoins, FaShareAlt, FaHome, FaSyncAlt } from "react-icons/fa";
+import { useToast } from "../../context/useToast.js";
 
 const Settings = () => {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { data, refetch: refetchSettings } = useQuery({
     queryKey: ["settings"],
@@ -41,7 +43,10 @@ const Settings = () => {
     mutationFn: settingsApi.update,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
-      alert("Settings saved successfully!");
+      showToast({ type: "success", message: "Settings saved successfully!" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to save settings" });
     },
   });
 

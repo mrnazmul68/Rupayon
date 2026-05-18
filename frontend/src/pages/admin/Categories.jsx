@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { categoriesApi } from "../../services/api.js";
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaSyncAlt } from "react-icons/fa";
 import { CategoriesSkeleton } from "../../components/Skeletons.jsx";
+import { useToast } from "../../context/useToast.js";
 
 const Categories = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,6 +17,7 @@ const Categories = () => {
   });
 
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
   const { data: categoriesData, isLoading, refetch: refetchCategories } = useQuery({
     queryKey: ["categories"],
@@ -36,6 +38,10 @@ const Categories = () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setIsModalOpen(false);
       resetForm();
+      showToast({ type: "success", message: "Category created successfully!" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to create category" });
     },
   });
 
@@ -45,6 +51,10 @@ const Categories = () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setIsModalOpen(false);
       resetForm();
+      showToast({ type: "success", message: "Category updated successfully!" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to update category" });
     },
   });
 
@@ -52,6 +62,10 @@ const Categories = () => {
     mutationFn: categoriesApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
+      showToast({ type: "success", message: "Category deleted successfully!" });
+    },
+    onError: (error) => {
+      showToast({ type: "error", message: error.message || "Failed to delete category" });
     },
   });
 

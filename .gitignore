@@ -33,3 +33,4 @@ yarn-error.log*
 firestore.indexes.json
 firestore.rules
 database.rules.json
+serviceAccountKey.json
