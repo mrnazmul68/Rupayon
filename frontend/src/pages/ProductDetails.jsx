@@ -28,6 +28,10 @@ const colorMap = {
   Olive: "#59633B",
 };
 
+const isValidHexCode = (color) => {
+  return /^#([0-9A-Fa-f]{3}){1,2}$/.test(color);
+};
+
 const fetchProductById = async (id) => {
   const product = await getLiveProduct(id);
 
@@ -75,7 +79,7 @@ const ProductDetails = () => {
 
     return product.colors.map((color) => ({
       name: color,
-      hex: colorMap[color] || "#1C1C1C",
+      hex: isValidHexCode(color) ? color : (colorMap[color] || "#1C1C1C"),
     }));
   }, [product]);
 
