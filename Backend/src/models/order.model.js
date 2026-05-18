@@ -77,12 +77,6 @@ const orderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    hasNewActivity: {
-      type: Boolean,
-      default: false,
-    },
-    activityMessage: String,
-    activitySeenAt: Date,
   },
   { timestamps: true, versionKey: false }
 );

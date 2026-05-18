@@ -7,13 +7,11 @@ import {
   deleteOrder,
   deleteBulkOrders,
   getDashboardStats,
-  markOrdersActivitySeen,
 } from "../controllers/order.controller.js";
 
 const router = express.Router();
 
 router.get("/orders", getOrders);
-router.put("/orders/activity/seen", markOrdersActivitySeen);
 router.get("/orders/:id", getSingleOrder);
 router.post("/orders", createOrder);
 router.put("/orders/:id", updateOrder);
