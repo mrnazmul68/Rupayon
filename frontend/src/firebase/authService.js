@@ -1,12 +1,13 @@
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
-  getRedirectResult,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  sendEmailVerification,
   signInWithEmailAndPassword,
-  signInWithRedirect,
+  signInWithPopup,
   signOut,
+  updateProfile,
 } from "firebase/auth";
 
 import { auth } from "./auth";
@@ -16,38 +17,74 @@ googleProvider.setCustomParameters({
   prompt: "select_account",
 });
 
-export const registerUser = async ({ email, password }) => {
-  const cleanEmail = email.trim().toLowerCase();
+export const registerUser = async ({ name, email, password }) => {
   const userCredential = await createUserWithEmailAndPassword(
     auth,
-    cleanEmail,
+    email.trim(),
     password
   );
 
-  return userCredential.user;
+  const user = userCredential.user;
+
+  await updateProfile(user, {
+    displayName: name.trim(),
+  });
+
+  await sendEmailVerification(user);
+  await signOut(auth);
+
+  return user;
 };
 
 export const loginUser = async ({ email, password }) => {
-  const cleanEmail = email.trim().toLowerCase();
   const userCredential = await signInWithEmailAndPassword(
     auth,
-    cleanEmail,
+    email.trim(),
     password
   );
 
-  return userCredential.user;
+  await userCredential.user.reload();
+
+  if (!auth.currentUser?.emailVerified) {
+    await sendEmailVerification(userCredential.user);
+    await signOut(auth);
+    throw new Error(
+      "Please verify your email before logging in. We sent a new verification email."
+    );
+  }
+
+  return auth.currentUser;
 };
 
-export const resetPassword = ({ email }) =>
-  sendPasswordResetEmail(auth, email.trim().toLowerCase());
+export const resendVerificationEmail = async ({ email, password }) => {
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    email.trim(),
+    password
+  );
+
+  await userCredential.user.reload();
+
+  if (userCredential.user.emailVerified) {
+    await signOut(auth);
+    return { alreadyVerified: true };
+  }
+
+  await sendEmailVerification(userCredential.user);
+  await signOut(auth);
+
+  return { alreadyVerified: false };
+};
+
+export const resetPassword = ({ email }) => {
+  return sendPasswordResetEmail(auth, email.trim());
+};
 
 export const logoutUser = () => signOut(auth);
 
 export const googleLogin = async () => {
-  await signInWithRedirect(auth, googleProvider);
+  await signInWithPopup(auth, googleProvider);
 };
-
-export const getRedirectResultFromAuth = () => getRedirectResult(auth);
 
 export const getCurrentUser = () => auth.currentUser;
 
